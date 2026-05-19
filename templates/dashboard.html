@@ -1,0 +1,817 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GLD Event Study Dashboard</title>
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f4f6f1;
+        --ink: #17191c;
+        --muted: #65717b;
+        --line: #d8ded1;
+        --panel: #ffffff;
+        --soft: #fafbf7;
+        --green: #147a58;
+        --red: #b43e47;
+        --amber: #b97818;
+        --blue: #236aa4;
+        --shadow: 0 18px 45px rgba(28, 38, 35, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-width: 320px;
+        background: var(--bg);
+        color: var(--ink);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .shell {
+        width: min(1500px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 24px 0 36px;
+      }
+
+      header {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 18px;
+        align-items: end;
+        padding-bottom: 18px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(32px, 4.2vw, 60px);
+        line-height: 0.96;
+        letter-spacing: 0;
+      }
+
+      .subhead {
+        margin: 10px 0 0;
+        max-width: 930px;
+        color: var(--muted);
+        font-size: 15px;
+      }
+
+      .status {
+        display: inline-grid;
+        grid-template-columns: 10px auto;
+        gap: 8px;
+        align-items: center;
+        min-height: 36px;
+        padding: 0 14px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: var(--panel);
+        color: var(--muted);
+        box-shadow: var(--shadow);
+        white-space: nowrap;
+      }
+
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        background: var(--green);
+      }
+
+      .research-bar {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 16px;
+        align-items: center;
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #101417;
+        color: #f6f7f3;
+        box-shadow: var(--shadow);
+        margin-bottom: 16px;
+      }
+
+      .research-title {
+        font-size: clamp(20px, 2.2vw, 30px);
+        font-weight: 850;
+        line-height: 1.1;
+      }
+
+      .research-subtitle {
+        margin-top: 7px;
+        color: #9ba8af;
+        font-size: 13px;
+      }
+
+      .controls {
+        display: grid;
+        grid-template-columns: repeat(4, 150px);
+        gap: 10px;
+      }
+
+      label {
+        display: grid;
+        gap: 6px;
+        color: #9ba8af;
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+
+      select,
+      input {
+        width: 100%;
+        height: 36px;
+        padding: 0 10px;
+        border: 1px solid #323b40;
+        border-radius: 6px;
+        background: #1a2227;
+        color: #f6f7f3;
+        font: inherit;
+        font-size: 14px;
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+      }
+
+      .metrics {
+        grid-template-columns: repeat(8, minmax(0, 1fr));
+        margin-bottom: 16px;
+      }
+
+      .metric,
+      section {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+
+      .metric {
+        min-height: 102px;
+        padding: 15px;
+      }
+
+      .label-light {
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 850;
+        text-transform: uppercase;
+      }
+
+      .value {
+        margin-top: 12px;
+        font-size: clamp(22px, 2.5vw, 34px);
+        font-weight: 850;
+        line-height: 1;
+      }
+
+      .good {
+        color: var(--green);
+      }
+
+      .bad {
+        color: var(--red);
+      }
+
+      .main {
+        grid-template-columns: minmax(0, 1.65fr) minmax(390px, 0.9fr);
+        align-items: start;
+      }
+
+      .lower {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        margin-top: 16px;
+      }
+
+      .section-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: center;
+        min-height: 58px;
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      h2 {
+        margin: 0;
+        font-size: 16px;
+      }
+
+      .note {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .plot {
+        width: 100%;
+        height: 500px;
+      }
+
+      .plot.small {
+        height: 360px;
+      }
+
+      .events {
+        max-height: 500px;
+        overflow: auto;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        padding: 11px 12px;
+        border-bottom: 1px solid var(--line);
+        text-align: left;
+        font-size: 13px;
+        vertical-align: top;
+      }
+
+      th {
+        color: var(--muted);
+        font-size: 11px;
+        text-transform: uppercase;
+      }
+
+      tr:last-child td {
+        border-bottom: 0;
+      }
+
+      tr.event-row {
+        cursor: pointer;
+      }
+
+      tr.event-row:hover {
+        background: #f4f8f5;
+      }
+
+      .positive {
+        color: var(--green);
+        font-weight: 760;
+      }
+
+      .negative {
+        color: var(--red);
+        font-weight: 760;
+      }
+
+      .method {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 10px;
+        padding: 16px;
+      }
+
+      .quality {
+        padding: 12px 14px 16px;
+      }
+
+      .step {
+        min-height: 116px;
+        padding: 14px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--soft);
+      }
+
+      .step b {
+        display: block;
+        font-size: 13px;
+      }
+
+      .step span {
+        display: block;
+        margin-top: 9px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.42;
+      }
+
+      @media (max-width: 1180px) {
+        .research-bar,
+        .main,
+        .lower {
+          grid-template-columns: 1fr;
+        }
+
+        .controls,
+        .metrics {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .method {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 720px) {
+        .shell {
+          width: min(100% - 20px, 1500px);
+          padding-top: 12px;
+        }
+
+        header,
+        .controls,
+        .metrics,
+        .method {
+          grid-template-columns: 1fr;
+        }
+
+        .plot {
+          height: 390px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <header>
+        <div>
+          <h1>GLD Event Study Dashboard</h1>
+          <p class="subhead">Drawdown pattern detection and forward return analysis for GLD. Prices and volume are embedded directly in this static HTML as JSON.</p>
+        </div>
+        <div class="status"><span class="dot"></span><span id="statusText">Embedded GLD data loaded</span></div>
+      </header>
+
+      <div class="research-bar">
+        <div>
+          <div class="research-title">When GLD falls more than <span id="headlineThreshold">5%</span> over <span id="headlineLookback">5</span> trading days, what happens over the next <span id="headlineHold">3</span> days?</div>
+          <div class="research-subtitle">Signal uses only data available through the event date; forward return is used only for evaluation.</div>
+        </div>
+        <div class="controls">
+          <label>Lookback
+            <select id="lookback">
+              <option value="5" selected>5 trading days</option>
+              <option value="10">10 trading days</option>
+              <option value="20">20 trading days</option>
+            </select>
+          </label>
+          <label>Drop threshold
+            <select id="threshold">
+              <option value="-0.03">-3%</option>
+              <option value="-0.05" selected>-5%</option>
+              <option value="-0.07">-7%</option>
+              <option value="-0.10">-10%</option>
+            </select>
+          </label>
+          <label>Forward horizon
+            <select id="horizon">
+              <option value="1">1 day</option>
+              <option value="3" selected>3 days</option>
+              <option value="5">5 days</option>
+              <option value="10">10 days</option>
+            </select>
+          </label>
+          <label>Event sampling
+            <select id="eventMode">
+              <option value="nonoverlap" selected>Non-overlap</option>
+              <option value="first">First in cluster</option>
+              <option value="all">All triggers</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <div class="grid metrics" id="metrics"></div>
+
+      <div class="grid main">
+        <section>
+          <div class="section-head">
+            <h2>GLD Price With Trigger Events</h2>
+            <span class="note">Drag to zoom. Double-click to reset.</span>
+          </div>
+          <div id="priceChart" class="plot"></div>
+        </section>
+
+        <section>
+          <div class="section-head">
+            <h2>Triggered Historical Scenarios</h2>
+            <span class="note" id="eventNote"></span>
+          </div>
+          <div class="events">
+            <table>
+              <thead>
+                <tr><th>Date</th><th>Drawdown</th><th>Fwd Return</th><th>Volume</th></tr>
+              </thead>
+              <tbody id="eventRows"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <div class="grid lower">
+        <section>
+          <div class="section-head">
+            <h2>Distribution Of Forward Returns</h2>
+            <span class="note">Event-level outcomes vs zero</span>
+          </div>
+          <div id="histogram" class="plot small"></div>
+        </section>
+
+        <section>
+          <div class="section-head">
+            <h2>Average Event Window</h2>
+            <span class="note">Normalized to trigger date</span>
+          </div>
+          <div id="eventWindow" class="plot small"></div>
+        </section>
+      </div>
+
+      <div class="grid lower">
+        <section>
+          <div class="section-head">
+            <h2>Event Study Method</h2>
+            <span class="note">Quant DE talking points</span>
+          </div>
+          <div class="method">
+            <div class="step"><b>Ingest</b><span>Download GLD daily OHLCV and preserve raw CSV for auditability.</span></div>
+            <div class="step"><b>Normalize</b><span>Sort by date, coerce numeric fields, remove duplicate trading dates.</span></div>
+            <div class="step"><b>Label</b><span>Compute drawdown using only current and prior closes.</span></div>
+            <div class="step"><b>Evaluate</b><span>Attach future return after the event date for statistical analysis.</span></div>
+            <div class="step"><b>Explore</b><span>Zoom into event clusters and inspect return distribution interactively.</span></div>
+          </div>
+        </section>
+
+        <section>
+          <div class="section-head">
+            <h2>Embedded Data Health</h2>
+            <span class="note">Static JSON audit summary</span>
+          </div>
+          <div class="quality">
+            <table>
+              <tbody id="qualityRows"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <script>
+      const EMBEDDED_DATA = __EMBEDDED_GLD_JSON__;
+      const records = EMBEDDED_DATA.records;
+      let activeStudy = null;
+
+      const formatPct = (value) => `${(value * 100).toFixed(2)}%`;
+      const formatNum = (value, digits = 2) => Number(value).toFixed(digits);
+      const formatVolume = (value) => Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }).format(value);
+
+      function closeAt(index) {
+        return records[index]?.close ?? null;
+      }
+
+      function computeStudy() {
+        const lookback = Number(document.getElementById("lookback").value);
+        const threshold = Number(document.getElementById("threshold").value);
+        const horizon = Number(document.getElementById("horizon").value);
+        const eventMode = document.getElementById("eventMode").value;
+        const rawEvents = [];
+        const baselineReturns = [];
+
+        for (let i = lookback; i < records.length - horizon; i += 1) {
+          const drawdown = closeAt(i) / closeAt(i - lookback) - 1;
+          const forwardReturn = closeAt(i + horizon) / closeAt(i) - 1;
+          if (Number.isFinite(forwardReturn)) baselineReturns.push(forwardReturn);
+          if (drawdown <= threshold) {
+            rawEvents.push({
+              index: i,
+              date: records[i].date,
+              close: records[i].close,
+              volume: records[i].volume,
+              drawdown,
+              forwardReturn,
+            });
+          }
+        }
+
+        const events = filterEvents(rawEvents, eventMode, horizon);
+        const returns = events.map((event) => event.forwardReturn);
+        const mean = average(returns);
+        const median = quantile(returns, 0.5);
+        const std = standardDeviation(returns);
+        const sharpe = std ? mean / std : 0;
+        const baselineMean = average(baselineReturns);
+        const wins = returns.filter((value) => value > 0).length;
+        const sorted = [...events].sort((a, b) => a.forwardReturn - b.forwardReturn);
+
+        return {
+          lookback,
+          threshold,
+          horizon,
+          eventMode,
+          rawEventCount: rawEvents.length,
+          events,
+          metrics: {
+            count: events.length,
+            mean,
+            median,
+            winRate: events.length ? wins / events.length : 0,
+            sharpe,
+            baselineMean,
+            excessMean: mean - baselineMean,
+            tStat: returns.length > 1 && std ? mean / (std / Math.sqrt(returns.length)) : 0,
+            best: sorted.at(-1)?.forwardReturn ?? 0,
+            worst: sorted[0]?.forwardReturn ?? 0,
+          },
+        };
+      }
+
+      function filterEvents(rawEvents, mode, horizon) {
+        if (mode === "all") return rawEvents;
+        if (mode === "first") {
+          const filtered = [];
+          let previousIndex = -Infinity;
+          rawEvents.forEach((event) => {
+            if (event.index !== previousIndex + 1) filtered.push(event);
+            previousIndex = event.index;
+          });
+          return filtered;
+        }
+
+        const filtered = [];
+        let cooldownUntil = -Infinity;
+        rawEvents.forEach((event) => {
+          if (event.index > cooldownUntil) {
+            filtered.push(event);
+            cooldownUntil = event.index + horizon;
+          }
+        });
+        return filtered;
+      }
+
+      function average(values) {
+        return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
+      }
+
+      function standardDeviation(values) {
+        if (values.length < 2) return 0;
+        const mean = average(values);
+        return Math.sqrt(values.reduce((sum, value) => sum + (value - mean) ** 2, 0) / (values.length - 1));
+      }
+
+      function quantile(values, q) {
+        if (!values.length) return 0;
+        const sorted = [...values].sort((a, b) => a - b);
+        const pos = (sorted.length - 1) * q;
+        const base = Math.floor(pos);
+        const rest = pos - base;
+        return sorted[base + 1] === undefined ? sorted[base] : sorted[base] + rest * (sorted[base + 1] - sorted[base]);
+      }
+
+      function renderMetrics(study) {
+        const metricDefs = [
+          ["Events", study.metrics.count, ""],
+          [`Avg ${study.horizon}D Return`, formatPct(study.metrics.mean), study.metrics.mean >= 0 ? "good" : "bad"],
+          ["Baseline Avg", formatPct(study.metrics.baselineMean), study.metrics.baselineMean >= 0 ? "good" : "bad"],
+          ["Excess Return", formatPct(study.metrics.excessMean), study.metrics.excessMean >= 0 ? "good" : "bad"],
+          ["T-Stat", formatNum(study.metrics.tStat, 2), Math.abs(study.metrics.tStat) >= 1.96 ? "good" : ""],
+          ["Win Rate", formatPct(study.metrics.winRate), study.metrics.winRate >= 0.5 ? "good" : "bad"],
+          ["Event Sharpe", formatNum(study.metrics.sharpe, 2), study.metrics.sharpe >= 0 ? "good" : "bad"],
+          ["Worst Case", formatPct(study.metrics.worst), "bad"],
+        ];
+
+        document.getElementById("metrics").innerHTML = metricDefs
+          .map(
+            ([label, value, tone]) => `
+              <article class="metric">
+                <div class="label-light">${label}</div>
+                <div class="value ${tone}">${value}</div>
+              </article>
+            `,
+          )
+          .join("");
+      }
+
+      function renderPriceChart(study) {
+        const dates = records.map((row) => row.date);
+        const closes = records.map((row) => row.close);
+        const volumes = records.map((row) => row.volume);
+        const eventDates = study.events.map((event) => event.date);
+        const eventPrices = study.events.map((event) => event.close);
+        const eventText = study.events.map(
+          (event) =>
+            `${event.date}<br>Close: $${formatNum(event.close, 2)}<br>${study.lookback}D drawdown: ${formatPct(event.drawdown)}<br>${study.horizon}D fwd return: ${formatPct(event.forwardReturn)}<br>Volume: ${formatVolume(event.volume)}`,
+        );
+
+        const traces = [
+          {
+            x: dates,
+            y: closes,
+            type: "scatter",
+            mode: "lines",
+            name: "GLD Close",
+            line: { color: "#236aa4", width: 2 },
+            hovertemplate: "%{x}<br>Close: $%{y:.2f}<extra></extra>",
+          },
+          {
+            x: dates,
+            y: volumes,
+            type: "bar",
+            name: "Volume",
+            yaxis: "y2",
+            marker: { color: "rgba(100,113,123,0.22)" },
+            hovertemplate: "%{x}<br>Volume: %{y:,}<extra></extra>",
+          },
+          {
+            x: eventDates,
+            y: eventPrices,
+            type: "scatter",
+            mode: "markers",
+            name: "Trigger Event",
+            marker: { color: "#b43e47", size: 9, line: { color: "#ffffff", width: 1.5 } },
+            text: eventText,
+            hovertemplate: "%{text}<extra></extra>",
+          },
+        ];
+
+        const shapes = study.events.map((event) => ({
+          type: "line",
+          xref: "x",
+          yref: "paper",
+          x0: event.date,
+          x1: event.date,
+          y0: 0,
+          y1: 1,
+          line: { color: "rgba(180,62,71,0.22)", width: 1 },
+        }));
+
+        Plotly.react("priceChart", traces, {
+          margin: { l: 58, r: 62, t: 18, b: 42 },
+          paper_bgcolor: "#ffffff",
+          plot_bgcolor: "#ffffff",
+          hovermode: "closest",
+          dragmode: "zoom",
+          shapes,
+          legend: { orientation: "h", x: 0, y: 1.12 },
+          xaxis: {
+            rangeslider: { visible: true, thickness: 0.08 },
+            rangeselector: {
+              buttons: [
+                { count: 1, label: "1Y", step: "year", stepmode: "backward" },
+                { count: 5, label: "5Y", step: "year", stepmode: "backward" },
+                { step: "all", label: "All" },
+              ],
+            },
+          },
+          yaxis: { title: "GLD Close" },
+          yaxis2: { title: "Volume", overlaying: "y", side: "right", showgrid: false },
+        }, { responsive: true, displaylogo: false });
+      }
+
+      function renderHistogram(study) {
+        Plotly.react("histogram", [
+          {
+            x: study.events.map((event) => event.forwardReturn),
+            type: "histogram",
+            nbinsx: 24,
+            marker: { color: "#147a58", line: { color: "#ffffff", width: 1 } },
+            hovertemplate: "Forward return: %{x:.2%}<br>Events: %{y}<extra></extra>",
+          },
+        ], {
+          margin: { l: 58, r: 22, t: 18, b: 46 },
+          paper_bgcolor: "#ffffff",
+          plot_bgcolor: "#ffffff",
+          xaxis: { title: `${study.horizon}D forward return`, tickformat: ".1%" },
+          yaxis: { title: "Event count" },
+          shapes: [
+            { type: "line", x0: 0, x1: 0, y0: 0, y1: 1, xref: "x", yref: "paper", line: { color: "#17191c", dash: "dot" } },
+            { type: "line", x0: study.metrics.mean, x1: study.metrics.mean, y0: 0, y1: 1, xref: "x", yref: "paper", line: { color: "#147a58", width: 2 } },
+            { type: "line", x0: study.metrics.baselineMean, x1: study.metrics.baselineMean, y0: 0, y1: 1, xref: "x", yref: "paper", line: { color: "#b97818", width: 2, dash: "dash" } },
+          ],
+          annotations: [
+            { x: study.metrics.mean, y: 1.03, xref: "x", yref: "paper", text: "event avg", showarrow: false, font: { size: 11, color: "#147a58" } },
+            { x: study.metrics.baselineMean, y: 0.92, xref: "x", yref: "paper", text: "baseline", showarrow: false, font: { size: 11, color: "#b97818" } },
+          ],
+        }, { responsive: true, displaylogo: false });
+      }
+
+      function renderEventWindow(study) {
+        const offsets = [];
+        const averagePath = [];
+        for (let offset = -study.lookback; offset <= study.horizon; offset += 1) {
+          const values = study.events
+            .map((event) => {
+              const base = closeAt(event.index);
+              const close = closeAt(event.index + offset);
+              return base && close ? close / base - 1 : null;
+            })
+            .filter((value) => value !== null && Number.isFinite(value));
+          offsets.push(offset);
+          averagePath.push(average(values));
+        }
+
+        Plotly.react("eventWindow", [
+          {
+            x: offsets,
+            y: averagePath,
+            type: "scatter",
+            mode: "lines+markers",
+            name: "Average event path",
+            line: { color: "#236aa4", width: 3 },
+            marker: { size: 7 },
+            hovertemplate: "T%{x:+d}<br>Avg path: %{y:.2%}<extra></extra>",
+          },
+        ], {
+          margin: { l: 58, r: 22, t: 18, b: 46 },
+          paper_bgcolor: "#ffffff",
+          plot_bgcolor: "#ffffff",
+          xaxis: { title: "Trading days around event" },
+          yaxis: { title: "Return vs trigger close", tickformat: ".1%" },
+          shapes: [
+            { type: "line", x0: 0, x1: 0, y0: 0, y1: 1, xref: "x", yref: "paper", line: { color: "#b43e47", width: 2 } },
+            { type: "line", x0: -study.lookback, x1: study.horizon, y0: 0, y1: 0, xref: "x", yref: "y", line: { color: "#17191c", dash: "dot" } },
+          ],
+          annotations: [{ x: 0, y: 1.02, xref: "x", yref: "paper", text: "trigger", showarrow: false, font: { size: 11, color: "#b43e47" } }],
+        }, { responsive: true, displaylogo: false });
+      }
+
+      function renderEventRows(study) {
+        document.getElementById("eventNote").textContent = `${study.events.length} sampled / ${study.rawEventCount} raw triggers`;
+        document.getElementById("eventRows").innerHTML = study.events
+          .slice()
+          .reverse()
+          .slice(0, 80)
+          .map(
+            (event) => `
+              <tr class="event-row" data-event-index="${event.index}" title="Click to zoom into this event window">
+                <td>${event.date}</td>
+                <td class="negative">${formatPct(event.drawdown)}</td>
+                <td class="${event.forwardReturn >= 0 ? "positive" : "negative"}">${formatPct(event.forwardReturn)}</td>
+                <td>${formatVolume(event.volume)}</td>
+              </tr>
+            `,
+          )
+          .join("");
+        document.querySelectorAll("[data-event-index]").forEach((row) => {
+          row.addEventListener("click", () => zoomToEvent(Number(row.dataset.eventIndex)));
+        });
+      }
+
+      function zoomToEvent(index) {
+        if (!activeStudy) return;
+        const left = Math.max(0, index - activeStudy.lookback - 12);
+        const right = Math.min(records.length - 1, index + activeStudy.horizon + 12);
+        Plotly.relayout("priceChart", {
+          "xaxis.range": [records[left].date, records[right].date],
+        });
+      }
+
+      function renderHeadline(study) {
+        document.getElementById("headlineThreshold").textContent = `${Math.abs(study.threshold * 100).toFixed(0)}%`;
+        document.getElementById("headlineLookback").textContent = String(study.lookback);
+        document.getElementById("headlineHold").textContent = String(study.horizon);
+      }
+
+      function renderDataHealth() {
+        const nullCount = records.reduce((count, row) => count + Object.values(row).filter((value) => value === null).length, 0);
+        const staleCloseCount = records.reduce((count, row, index) => count + (index > 0 && row.close === records[index - 1].close ? 1 : 0), 0);
+        const dollarVolumes = records.map((row) => row.dollar_volume).filter((value) => value !== null);
+        const rows = [
+          ["Symbol", EMBEDDED_DATA.symbol],
+          ["Rows embedded", records.length.toLocaleString("en-US")],
+          ["Date range", `${records[0].date} to ${records.at(-1).date}`],
+          ["Generated", EMBEDDED_DATA.generated_at],
+          ["Source", EMBEDDED_DATA.source.includes("query1.finance.yahoo") ? "Yahoo Finance chart API" : "Stooq daily CSV"],
+          ["Null derived fields", nullCount.toLocaleString("en-US")],
+          ["Unchanged closes", staleCloseCount.toLocaleString("en-US")],
+          ["Median dollar volume", `$${formatVolume(quantile(dollarVolumes, 0.5))}`],
+        ];
+        document.getElementById("qualityRows").innerHTML = rows
+          .map(([key, value]) => `<tr><th>${key}</th><td>${value}</td></tr>`)
+          .join("");
+      }
+
+      function render() {
+        const study = computeStudy();
+        activeStudy = study;
+        renderHeadline(study);
+        renderMetrics(study);
+        renderPriceChart(study);
+        renderHistogram(study);
+        renderEventWindow(study);
+        renderEventRows(study);
+        renderDataHealth();
+      }
+
+      ["lookback", "threshold", "horizon", "eventMode"].forEach((id) => {
+        document.getElementById(id).addEventListener("change", render);
+      });
+
+      render();
+    </script>
+  </body>
+</html>
