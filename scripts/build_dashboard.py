@@ -128,9 +128,11 @@ def main() -> None:
     raw = download_gld()
     records = prepare_records(raw)
     html = build_html(records, raw.attrs.get("source_url", SOURCE_URL))
+    (ROOT / "index.html").write_text(html, encoding="utf-8")
     (WEB_DIR / "index.html").write_text(html, encoding="utf-8")
     first = records[0]["date"] if records else "n/a"
     last = records[-1]["date"] if records else "n/a"
+    print(f"Wrote {ROOT / 'index.html'}")
     print(f"Wrote {WEB_DIR / 'index.html'}")
     print(f"Embedded {len(records)} GLD daily records from {first} to {last}")
 

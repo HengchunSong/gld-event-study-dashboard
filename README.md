@@ -35,12 +35,13 @@ Then open:
 http://localhost:8000/web/
 ```
 
-For GitHub Pages, serve the repository root. The root `index.html` redirects to the dashboard in `web/`.
+For GitHub Pages, serve the repository root. The root `index.html` is the full dashboard, and `web/index.html` is kept as a duplicate local entry point.
 
 ## Outputs
 
 - `data/gld_daily.csv`: downloaded GLD OHLCV history
-- `web/index.html`: static dashboard with embedded JSON data
+- `index.html`: static GitHub Pages dashboard with embedded JSON data
+- `web/index.html`: duplicate local dashboard entry point
 
 ## Metric Notes
 
