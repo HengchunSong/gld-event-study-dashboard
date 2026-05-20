@@ -8,18 +8,6 @@ The dashboard studies a simple drawdown event in `GLD`:
 
 It downloads daily OHLCV data, calculates point-in-time event labels, computes forward returns and event-level Sharpe, and writes a single static HTML file with the GLD price and volume JSON embedded directly in the page.
 
-## Why This Demo Fits A Quant Data Engineer Role
-
-- Market data ingestion from a reproducible source
-- Time-series feature engineering with rolling 5-day drawdown
-- Point-in-time event labeling with no look-ahead in the signal definition
-- Forward return analysis and event-level Sharpe calculation
-- Baseline comparison, excess return, t-stat, and event-level Sharpe calculation
-- Interactive research UI with zoom, hover tooltips, event highlighting, parameter controls, and click-to-zoom event rows
-- Non-overlapping event sampling to avoid overstating clustered drawdowns
-- Average event-window path from pre-event drawdown through post-event holding period
-- Static deployment: no API key, no database, no backend required after generation
-
 ## Quick Start
 
 ```powershell
